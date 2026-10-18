@@ -13,6 +13,8 @@
 ## Phase 1 required functionality
 
 - Desktop React + TypeScript navigation, charts, filter intersections and transaction editing with synthetic data.
+- Owner UX revision: every drilldown has Back and Consolidated view controls near chart/list cards, plus an always-visible drilldown navigation bar. Back removes one history level; Consolidated view clears drilldown dimensions in one action while retaining the date range from before the first drill. Filtered direct links also have an exit without requiring saved history.
+- At widths up to 900px, a sticky header hamburger opens the full workspace menu. Selection, Escape and outside click dismiss it; desktop navigation remains visible above 900px. Opening focuses the first menu item and keyboard dismissal returns focus to the toggle.
 - **NEW MANDATORY EXIT GATE: manual transaction creation**: date/time (time optional), merchant, amount in integer paise, direction, class, category/subcategory, account, tags and comments. Validate required fields and valid dates/amounts, show resulting transaction, update all financial totals and category drill-down, and support return/back navigation.
 - **NEW MANDATORY EXIT GATE: CSV import preview**: accept local CSV for *fabricated testing only*, Axio and Budget IO export schemas, quoted data, format/required-column checks, valid rupee/date/time conversion, class mapping, ambiguous classification review, candidate duplicates (including repeated same-day transactions), row status and debit/credit/expense subtotals. **Preview only; persistence/commit disabled until Phase 2.**
 - Full five chart-interaction/navigation acceptance tests remain binding; new tests AT-06/AT-07 added. Validate on production React 19/Vite build before claiming Phase 1 is signed off.
@@ -34,4 +36,4 @@
 
 ## Definition of done and unresolved decisions
 
-Canonical strict TS/Vite compilation, all 32 Chromium/Firefox production-browser cases, native history/back/forward and reload persistence now pass in GitHub Actions; see `BUILD_VERIFICATION.md`. UI, tests and docs **do not themselves sign off Phase 1**: comprehensive accessibility/contrast review and owner UX approval remain pending. Backend security design, full-history import commit, message capture reliability and regulated-distribution review remain separate gates.
+Canonical strict TS/Vite compilation, all 44 Chromium/Firefox production-browser cases, native history/back/forward and reload persistence now pass in GitHub Actions; see `BUILD_VERIFICATION.md`. UI, tests and docs **do not themselves sign off Phase 1**: comprehensive accessibility/contrast review and owner UX approval remain pending. Backend security design, full-history import commit, message capture reliability and regulated-distribution review remain separate gates.
