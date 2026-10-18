@@ -1,0 +1,4 @@
+{
+ "compilerOptions": {"target":"ES2022","lib":["ES2022","DOM"],"module":"NodeNext","moduleResolution":"NodeNext","strict":true,"skipLibCheck":true,"rootDir":"src","outDir":"build-test","declaration":true},
+ "include": ["src/domain.ts", "src/navigation.ts", "src/ingestion.ts"]
+}

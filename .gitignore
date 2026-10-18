@@ -1,0 +1,23 @@
+node_modules/
+dist/
+build-test/
+playwright-report/
+test-results/
+.env
+.env.*
+*.csv
+*.sqlite
+*.db
+*.bak
+*.key
+*.pem
+*.jsonl
+.DS_Store
+
+# Additional generated or private files
+*.zip
+*.bundle
+*.log
+
+# Historical generated preview; canonical build is React 19/Vite.
+budget-io-preview.html
