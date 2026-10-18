@@ -16,7 +16,12 @@ async function report(page:Page, expected:number){
  const rows=page.locator('.reconcile-row strong');
  await expect(rows).toHaveText([money(expected),money(expected),money(0)]);
 }
-async function openCreate(page:Page){await page.getByTestId('nav-transactions').click();await page.getByTestId('new-transaction-button').click();}
+async function navigateTo(page:Page,destination:string){
+ const toggle=page.getByRole('button',{name:'Open navigation menu',exact:true});
+ if(await toggle.isVisible())await toggle.click();
+ await page.getByTestId(`nav-${destination}`).click();
+}
+async function openCreate(page:Page){await navigateTo(page,'transactions');await page.getByTestId('new-transaction-button').click();}
 async function create(page:Page,kind:Kind,direction:'debit'|'credit',name:string){
  await openCreate(page);
  await page.getByLabel('Date',{exact:true}).fill('2026-10-18');
@@ -127,3 +132,59 @@ test('narrow viewport supports entry CSV and navigation without page overflow',a
  await page.getByTestId('new-merchant').fill('FABRICATED MOBILE');await page.getByTestId('new-amount').fill('1.23');await page.getByLabel('Date',{exact:true}).fill('2026-10-18');await page.getByTestId('save-new-transaction').click();await expect(page.getByRole('button',{name:'FABRICATED MOBILE',exact:true})).toBeVisible();
  await page.getByTestId('import-csv-button').click();await page.getByRole('button',{name:'Load sample CSV',exact:true}).click();await expect(page.locator('[data-testid^="import-row-"]')).toHaveCount(6);expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth)).toBe(true);await page.screenshot({path:info.outputPath('csv-preview-mobile.png'),fullPage:true});
 });
+
+test('nearby Back and one-click consolidated view undo Bills and Jio drilldowns without scrolling up',async({page},info)=>{
+ await page.goto('/?from=2026-08-01&to=2026-10-31');
+ await page.getByTestId('category-legend-Bills & Utilities').click();
+ await page.getByRole('button',{name:'Jio Fiber',exact:true}).first().click();
+ await expect(page).toHaveURL(/merchant=Jio/);
+ const merchants=page.locator('.panel').filter({has:page.getByRole('heading',{name:'Top merchants',exact:true})});
+ await merchants.getByRole('button',{name:'← Back',exact:true}).click();
+ await expect(page).toHaveURL(/category=Bills/);await expect(page).not.toHaveURL(/merchant=/);
+ await page.getByRole('button',{name:'Jio Fiber',exact:true}).first().click();
+ await page.locator('.data-footer').scrollIntoViewIfNeeded();
+ const dock=page.getByRole('navigation',{name:'Drilldown navigation',exact:true});
+ await expect(dock).toBeInViewport();await expect(page.getByTestId('back-button')).not.toBeInViewport();
+ await page.screenshot({path:info.outputPath('drilldown-navigation.png')});
+ await dock.getByRole('button',{name:'Consolidated view',exact:true}).click();
+ await expect(page).toHaveURL(/from=2026-08-01&to=2026-10-31/);await expect(page).not.toHaveURL(/category=|merchant=|kind=/);
+ await ledger(page,seed.filter(r=>r.date>='2026-08-01'&&r.date<='2026-10-31'));
+ await page.goBack();await expect(page).toHaveURL(/category=Bills.*merchant=Jio/);
+});
+
+for(const [id,merchant] of [['wealth','Self transfer'],['transfers','Between own accounts']] as const){
+ test(`${id} card and merchant drilldowns return directly to the selected period ledger`,async({page})=>{
+  await page.goto('/?from=2026-10-01&to=2026-10-31');await page.getByTestId(`kpi-${id}`).click();
+  await page.getByRole('button',{name:merchant,exact:true}).first().click();
+  const dock=page.getByRole('navigation',{name:'Drilldown navigation',exact:true});
+  await dock.getByRole('button',{name:'← Back',exact:true}).click();await expect(page).not.toHaveURL(/merchant=/);await expect(page).toHaveURL(new RegExp(`kind=${id==='wealth'?'wealth':'transfer'}`));
+  await dock.getByRole('button',{name:'Consolidated view',exact:true}).click();
+  await ledger(page,seed.filter(r=>r.date>='2026-10-01'&&r.date<='2026-10-31'));
+ });
+}
+
+test('direct filtered links can consolidate without a saved drilldown trail',async({page})=>{
+ await page.goto('/transactions?from=2026-10-01&to=2026-10-31&kind=expense&merchant=Jio+Fiber');
+ await page.getByRole('navigation',{name:'Drilldown navigation',exact:true}).getByRole('button',{name:'← Back',exact:true}).click();
+ await ledger(page,seed.filter(r=>r.date>='2026-10-01'&&r.date<='2026-10-31'));
+});
+
+for(const width of [390,768]){
+ test(`hamburger exposes all pages at ${width}px and supports selection Escape backdrop and resize`,async({page},info)=>{
+  await page.setViewportSize({width,height:844});await page.goto('/?from=2026-10-01&to=2026-10-31');
+  const open=page.getByRole('button',{name:'Open navigation menu',exact:true});
+  await expect(open).toBeVisible();await expect(open).toHaveAttribute('aria-expanded','false');await expect(page.getByTestId('nav-transactions')).not.toBeVisible();
+  await open.click();const close=page.getByRole('button',{name:'Close navigation menu',exact:true});await expect(close).toHaveAttribute('aria-expanded','true');
+  for(const destination of ['home','transactions','analytics','budgets','accounts','reports','settings'])await expect(page.getByTestId(`nav-${destination}`)).toBeVisible();
+  await expect(page.getByTestId('nav-home')).toBeFocused();
+  await page.screenshot({path:info.outputPath(`mobile-menu-${width}.png`)});
+  await page.getByTestId('nav-analytics').click();await expect(page.getByRole('heading',{name:'Trends & Analytics',exact:true})).toBeVisible();await expect(open).toHaveAttribute('aria-expanded','false');await expect(open).toBeFocused();
+  await expect(page).toHaveURL(/from=2026-10-01&to=2026-10-31/);
+  await open.click();await page.keyboard.press('Escape');await expect(open).toBeFocused();await expect(page.getByTestId('nav-home')).not.toBeVisible();
+  await open.click();await page.getByRole('button',{name:'Dismiss navigation menu',exact:true}).click({position:{x:width-10,y:100}});await expect(open).toHaveAttribute('aria-expanded','false');
+  await page.locator('.data-footer').scrollIntoViewIfNeeded();await expect(open).toBeInViewport();
+  await open.click();await page.setViewportSize({width:1280,height:844});await expect(page.getByTestId('nav-home')).toBeVisible();await expect(page.getByRole('button',{name:'Dismiss navigation menu',exact:true})).toHaveCount(0);
+  await page.setViewportSize({width,height:844});await expect(open).toHaveAttribute('aria-expanded','false');await expect(page.getByTestId('nav-home')).not.toBeVisible();
+  expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth)).toBe(true);
+ });
+}
