@@ -1,10 +1,12 @@
 # Budget IO by AyeBee | Phase 1 Interactive Desktop (v0.2.0)
 
-**Status (18 October 2026):** Canonical TypeScript/Vite production build and **22/22 Chromium production-browser tests pass**, plus **16/16 domain/ingestion/navigation tests**. Manual creation, Axio CSV dry-run, charts, KPI drilldowns, native browser history, persistence and reconciliation are exercised with synthetic records. Firefox on this Windows host cannot launch because its side-by-side runtime configuration is missing; CI includes Firefox on Linux. Owner UAT and comprehensive accessibility review remain pending. No live SMS, account access, database or authentication is connected. See [build evidence](docs/BUILD_VERIFICATION.md).
+**Status (18 October 2026):** Canonical TypeScript/Vite production build and **35/35 Chromium production-browser tests pass**, plus **16/16 domain/ingestion/navigation tests**. Manual creation, Axio CSV dry-run, charts, KPI drilldowns, native browser history, persistence and reconciliation are exercised with synthetic records. Firefox on this Windows host cannot launch because its side-by-side runtime configuration is missing; CI includes Firefox on Linux. Owner UAT and comprehensive accessibility review remain pending. No live SMS, account access, database or authentication is connected. See [build evidence](docs/BUILD_VERIFICATION.md).
 
-**GitHub Actions verified:** [run #4](https://github.com/ayebeehub/budget-io-by-ayebee/actions/runs/39149556470) passes locked dependency installation, 16 domain tests, strict production build and **44/44 Chromium + Firefox browser cases** on code commit `ac4fbf8`.
+**GitHub Actions verified:** [run #5](https://github.com/ayebeehub/budget-io-by-ayebee/actions/runs/39151001572) passes locked dependency installation, 16 domain tests, strict production build and **70/70 Chromium + Firefox browser cases** on code commit `3aa2f46`.
 
 ## What's new in v0.2.0
+
+- Selecting any spending category switches the donut to **vendor spending percentages**. Vendor slices and legend entries open their underlying transactions; all current filters are respected and every vendor is listed.
 
 - Nearby **Back** and **Consolidated view** controls on drilldown chart/list panels, plus a fixed navigation dock while scrolling. Consolidated view clears drilldown dimensions and keeps the original period.
 - Responsive hamburger menu at phone/tablet widths (up to 900 px) exposes all seven pages; selection, Escape and outside click close it.
