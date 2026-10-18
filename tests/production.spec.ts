@@ -188,3 +188,72 @@ for(const width of [390,768]){
   expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth)).toBe(true);
  });
 }
+
+for(const category of [...new Set(expenses.map(row=>row.category))]){
+ test(`category ${category} switches the donut to reconciled clickable vendor shares`,async({page},testInfo)=>{
+  await page.goto('/transactions');
+  await page.getByRole('button',{name:category,exact:true}).first().click();
+  const expected=expenses.filter(row=>row.category===category);
+  const vendorTotals=new Map<string,number>();
+  for(const row of expected)vendorTotals.set(row.merchant,(vendorTotals.get(row.merchant)??0)+row.amountPaise);
+  const chart=page.getByRole('img',{name:'Spending by vendor',exact:true});
+  await expect(page.getByRole('heading',{name:`Vendors in ${category}`,exact:true})).toBeVisible();
+  await expect(chart).toContainText(`${vendorTotals.size} vendors`);
+  await expect(chart).toContainText(money(sum(expected),true));
+  await expect(page.locator('[data-testid^="vendor-legend-"]')).toHaveCount(vendorTotals.size);
+  await expect(page.locator('[data-testid^="category-legend-"]')).toHaveCount(0);
+  const colors:string[]=[];
+  for(const [vendor,amount] of vendorTotals){
+   const percent=Number((amount/sum(expected)*100).toFixed(1));
+   await expect(page.getByTestId(`vendor-legend-${vendor}`)).toHaveText(`${vendor}${percent}%`);
+   const slice=page.getByTestId(`vendor-slice-${vendor}`);
+   await expect(slice.locator('title')).toHaveText(`${vendor}: ${money(amount)} · ${percent}% of selected spending`);
+   const segments=(await slice.getAttribute('stroke-dasharray'))!.split(' ').map(Number);
+   expect(segments[0]/(2*Math.PI*Number(await slice.getAttribute('r')))).toBeCloseTo(amount/sum(expected),8);
+   colors.push((await slice.getAttribute('stroke'))!);
+  }
+  expect(new Set(colors).size).toBe(vendorTotals.size);
+  await ledger(page,expected);
+  if(category==='Bills & Utilities')await page.locator('.panel').filter({has:page.getByRole('heading',{name:`Vendors in ${category}`,exact:true})}).screenshot({path:testInfo.outputPath('bills-vendor-breakdown.png')});
+  const vendor=[...vendorTotals.keys()][0];
+  await page.getByTestId(`vendor-legend-${vendor}`).click();
+  await ledger(page,expected.filter(row=>row.merchant===vendor));
+  await expect(page).toHaveURL(new RegExp('merchant='+encodeURIComponent(vendor).replace(/%20/g,'\\+')));
+  await page.getByRole('navigation',{name:'Drilldown navigation'}).getByRole('button',{name:'← Back',exact:true}).click();
+  await expect(page.locator('[data-testid^="vendor-legend-"]')).toHaveCount(vendorTotals.size);
+  await ledger(page,expected);
+ });
+}
+
+test('vendor breakdown follows date and account filters on every chart page, including empty results',async({page})=>{
+ const account='Axis Credit ·· 9017';
+ const query=new URLSearchParams({from:'2026-08-01',to:'2026-10-31',category:'Bills & Utilities',account,kind:'all'});
+ const expected=expenses.filter(r=>r.category==='Bills & Utilities'&&r.account===account&&r.date>='2026-08-01');
+ for(const route of ['/','/transactions','/analytics']){
+  await page.goto(`${route}?${query}`);
+  const chart=page.getByRole('img',{name:'Spending by vendor',exact:true});
+  await expect(chart).toContainText(money(sum(expected),true));
+  const vendor='Jio Fiber',amount=sum(expected.filter(r=>r.merchant===vendor));
+  await expect(page.getByTestId(`vendor-legend-${vendor}`)).toHaveText(`${vendor}${Number((amount/sum(expected)*100).toFixed(1))}%`);
+ }
+ await page.getByTestId('vendor-slice-Jio Fiber').press('Enter');
+ await ledger(page,expected.filter(r=>r.merchant==='Jio Fiber'));
+ await page.getByRole('navigation',{name:'Drilldown navigation'}).getByRole('button',{name:'← Back',exact:true}).click();
+ await page.getByTestId('search').fill('No fabricated vendor matches this');
+ await expect(page.getByText('No spending for these filters.',{exact:true})).toBeVisible();
+ await expect(page.locator('[data-testid^="vendor-legend-"]')).toHaveCount(0);
+});
+
+test('vendor legend includes every vendor beyond eight and fits the mobile category view',async({page},testInfo)=>{
+ const added=Array.from({length:10},(_,i)=>({...seed[0],id:`fabricated-vendor-${i}`,date:'2026-10-10',kind:'expense' as const,direction:'debit' as const,category:'Fabricated category',merchant:`Fabricated vendor ${i+1}`,amountPaise:(i+1)*10000}));
+ await page.addInitScript(({key,rows})=>localStorage.setItem(key,JSON.stringify(rows)),{key:storageKey,rows:[...seed,...added]});
+ await page.setViewportSize({width:390,height:844});
+ await page.goto('/transactions?from=2026-10-01&to=2026-10-31&category=Fabricated+category&kind=expense');
+ await expect(page.locator('[data-testid^="vendor-legend-"]')).toHaveCount(10);
+ await expect(page.getByTestId('vendor-legend-Fabricated vendor 1')).toHaveText('Fabricated vendor 11.8%');
+ expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth)).toBe(true);
+ await page.getByRole('heading',{name:'Vendors in Fabricated category',exact:true}).scrollIntoViewIfNeeded();
+ await page.screenshot({path:testInfo.outputPath('vendor-breakdown-mobile.png')});
+ await page.getByTestId('vendor-slice-Fabricated vendor 1').press('Space');
+ await ledger(page,[added[0]]);
+});
