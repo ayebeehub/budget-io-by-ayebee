@@ -118,8 +118,9 @@ function SectionTitle({title,subtitle,action}:{title:string;subtitle:string;acti
 function EditForm({original,save,cancel,isNew=false}:{original:Transaction;save:(t:Transaction)=>void;cancel:()=>void;isNew?:boolean}){
  const [t,setT]=useState<Transaction>(original);const [error,setError]=useState('');
  const [amountInput,setAmountInput]=useState(original.amountPaise?(original.amountPaise/100).toFixed(2):'');
+ const [tagsInput,setTagsInput]=useState(original.tags.join(', '));
  const set=<K extends keyof Transaction>(field:K,value:Transaction[K])=>setT(prev=>({...prev,[field]:value}));
- const submit=(ev:React.FormEvent)=>{ev.preventDefault();const next={...t,amountPaise:parseRupee(amountInput)??0};const errors=validateManual(next);if(errors.length){setError(errors.join(' '));return;}save({...next,tags:[...new Set(t.tags)],merchant:t.merchant.trim(),category:t.category.trim()});};
+ const submit=(ev:React.FormEvent)=>{ev.preventDefault();const next={...t,amountPaise:parseRupee(amountInput)??0,tags:tagsInput.split(',').map(x=>x.trim().replace(/^#/,'')).filter(Boolean)};const errors=validateManual(next);if(errors.length){setError(errors.join(' '));return;}save({...next,tags:[...new Set(next.tags)],merchant:t.merchant.trim(),category:t.category.trim()});};
  return <Panel className="edit-panel" title={isNew?"Add transaction":"Edit transaction"} right={<Badge color="purple">Synthetic demo</Badge>}><form onSubmit={submit} className="edit-grid">
   <label>Merchant<input data-testid={isNew?"new-merchant":"edit-merchant"} value={t.merchant} onChange={e=>set('merchant',e.target.value)} required/></label>
   <label>Date<input type="date" value={t.date} onChange={e=>set('date',e.target.value)} required/></label>
@@ -130,7 +131,7 @@ function EditForm({original,save,cancel,isNew=false}:{original:Transaction;save:
   <label>Category<input data-testid="edit-category" list="categories-datalist" value={t.category} onChange={e=>set('category',e.target.value)} required/><datalist id="categories-datalist">{Object.keys(CATEGORY_COLORS).concat(['Salary','Interest','Investments','Savings allocation','Internal transfers','Card repayment','Rewards']).map(c=><option key={c} value={c}/>)}</datalist></label>
   <label>Subcategory<input value={t.subcategory} onChange={e=>set('subcategory',e.target.value)}/></label>
   <label>Account<select value={t.account} onChange={e=>{const account=ACCOUNTS.find(a=>a.name===e.target.value);setT(prev=>({...prev,account:e.target.value,institution:account?.institution??prev.institution}));}}>{ACCOUNTS.map(a=><option key={a.name}>{a.name}</option>)}</select></label>
-  <label className="full">Tags (comma-separated)<input data-testid="edit-tags" value={t.tags.join(', ')} onChange={e=>set('tags',e.target.value.split(',').map(x=>x.trim().replace(/^#/,'')).filter(Boolean))}/><span className="hint">{TAG_LIBRARY.length} suggested tags. Create additional tags freely.</span></label>
+  <label className="full">Tags (comma-separated)<input data-testid="edit-tags" value={tagsInput} onChange={e=>setTagsInput(e.target.value)}/><span className="hint">{TAG_LIBRARY.length} suggested tags. Create additional tags freely.</span></label>
   <label className="full">Comments<textarea data-testid="edit-note" rows={3} value={t.note} onChange={e=>set('note',e.target.value)}/></label>
   {error&&<div className="form-error full">{error}</div>}
   <div className="full form-actions"><Button onClick={cancel}>Cancel</Button><Button kind="primary" type="submit" testid={isNew?"save-new-transaction":"save-transaction"}>{isNew?"Add transaction":"Save changes"}</Button></div>
