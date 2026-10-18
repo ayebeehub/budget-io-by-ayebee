@@ -83,7 +83,7 @@ test('AT-06 required fields validation natural typing creation persistence and c
  await page.getByTestId('save-new-transaction').click();await expect(page.getByText('Merchant is required.')).toBeVisible();
  await page.getByTestId('new-merchant').fill('FABRICATED MANUAL GROCERY');await page.getByLabel('Date',{exact:true}).fill('2026-10-18');await page.getByTestId('new-time').fill('14:35');
  await page.getByTestId('edit-category').fill('Groceries');await page.getByLabel('Subcategory',{exact:true}).fill('Synthetic supplies');
- await page.getByTestId('edit-tags').fill('SyntheticTag, Online');await page.getByTestId('edit-note').fill('FABRICATED manual note');await page.getByTestId('save-new-transaction').click();
+ await page.getByTestId('edit-tags').pressSequentially('SyntheticTag, Online');await expect(page.getByTestId('edit-tags')).toHaveValue('SyntheticTag, Online');await page.getByTestId('edit-note').fill('FABRICATED manual note');await page.getByTestId('save-new-transaction').click();
  await expect(page.getByTestId('transaction-row')).toHaveCount(seed.length+1);await page.reload();
  const row=page.getByTestId('transaction-row').filter({hasText:'FABRICATED MANUAL GROCERY'});await expect(row.locator('.amount-cell')).toHaveText(`−${money(9925)}`);
  await row.getByRole('button',{name:'Edit ↗'}).click();await expect(page.getByTestId('edit-note')).toHaveValue('FABRICATED manual note');await expect(page.getByTestId('edit-time')).toHaveValue('14:35');await expect(page.getByTestId('edit-tags')).toHaveValue('SyntheticTag, Online');
