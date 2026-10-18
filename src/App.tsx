@@ -64,22 +64,25 @@ function SpendingRing({value,budget,onClick}:{value:number;budget:number;onClick
   </svg>
  </button>;
 }
-function Donut({groups,onSelect}:{groups:Agg[];onSelect:(name:string)=>void}){
+function Donut({groups,onSelect,dimension='category'}:{groups:Agg[];onSelect:(name:string)=>void;dimension?:'category'|'vendor'}){
  const total=groups.reduce((s,g)=>s+g.amountPaise,0);
+ const vendorColors=Object.values(CATEGORY_COLORS);
+ const color=(group:Agg,index:number)=>dimension==='vendor'?vendorColors[index%vendorColors.length]:(CATEGORY_COLORS[group.key]??fallbackColor);
+ const share=(amount:number)=>total?Number((amount/total*100).toFixed(1)):0;
  const R=78, circumference=2*Math.PI*R;let used=0;
  return <div className="donut-row">
-  <div className="donut-visual"><svg viewBox="0 0 230 230" aria-label="Spending by category" role="img">
+  <div className="donut-visual"><svg viewBox="0 0 230 230" aria-label={`Spending by ${dimension}`} role="img">
    <circle cx="115" cy="115" r={R} stroke="#18253d" strokeWidth="25" fill="none"/>
-   {groups.map(group=>{const part=total?group.amountPaise/total:0;const dash=part*circumference;const offset=used;used+=dash;
-    return <circle key={group.key} data-testid={`donut-slice-${group.key}`} role="button" tabIndex={0} aria-label={`Open ${group.key} transactions`} onClick={()=>onSelect(group.key)} onKeyDown={e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();onSelect(group.key);}}} cx="115" cy="115" r={R} fill="none" stroke={CATEGORY_COLORS[group.key]??fallbackColor} strokeWidth="25" strokeDasharray={`${Math.max(0,dash)} ${circumference}`} strokeDashoffset={-offset} transform="rotate(-90 115 115)" className="donut-arc"><title>{group.key}: {money(group.amountPaise)}</title></circle>;
+   {groups.map((group,index)=>{const part=total?group.amountPaise/total:0;const dash=part*circumference;const offset=used;used+=dash;
+    return <circle key={group.key} data-testid={`${dimension==='vendor'?'vendor-slice':'donut-slice'}-${group.key}`} role="button" tabIndex={0} aria-label={`Open ${group.key} transactions`} onClick={()=>onSelect(group.key)} onKeyDown={e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();onSelect(group.key);}}} cx="115" cy="115" r={R} fill="none" stroke={color(group,index)} strokeWidth="25" strokeDasharray={`${Math.max(0,dash)} ${circumference}`} strokeDashoffset={-offset} transform="rotate(-90 115 115)" className="donut-arc"><title>{group.key}: {money(group.amountPaise)} · {share(group.amountPaise)}% of selected spending</title></circle>;
    })}
    <text x="115" y="102" textAnchor="middle" fill="#7f97b7" fontSize="11">Total spending</text>
    <text x="115" y="124" textAnchor="middle" fill="#f4f8ff" fontWeight="700" fontSize="18">{money(total,true)}</text>
-   <text x="115" y="144" textAnchor="middle" fill="#7f97b7" fontSize="10">{groups.length} categories</text>
+   <text x="115" y="144" textAnchor="middle" fill="#7f97b7" fontSize="10">{groups.length} {dimension==='vendor'?'vendors':'categories'}</text>
   </svg></div>
   <div className="donut-legend">
-   {groups.slice(0,8).map(group=><button data-testid={`category-legend-${group.key}`} className="legend-item" key={group.key} onClick={()=>onSelect(group.key)}>
-    <span className="legend-label"><span className="dot" style={{background:CATEGORY_COLORS[group.key]??fallbackColor}}/>{group.key}</span><span>{total?Math.round(group.amountPaise/total*100):0}%</span>
+   {(dimension==='vendor'?groups:groups.slice(0,8)).map((group,index)=><button data-testid={`${dimension}-legend-${group.key}`} className="legend-item" key={group.key} onClick={()=>onSelect(group.key)}>
+    <span className="legend-label"><span className="dot" style={{background:color(group,index)}}/>{group.key}</span><span>{dimension==='vendor'?share(group.amountPaise):(total?Math.round(group.amountPaise/total*100):0)}%</span>
    </button>)}
    {!groups.length&&<span className="muted">No spending for these filters.</span>}
   </div>
@@ -237,6 +240,9 @@ export default function App(){
   {label:'Savings & investments',value:amounts.wealth,desc:'Excluded from expenses',color:'purple',icon:'◈',kind:'wealth' as KindFilter,test:'kpi-wealth'},
   {label:'Transfers',value:amounts.transfers,desc:'Internal movement only',color:'yellow',icon:'⇄',kind:'transfer' as KindFilter,test:'kpi-transfers'}
  ];
+ const categorySelected=Boolean(view.filters.category);
+ const breakdownTitle=categorySelected?`Vendors in ${view.filters.category}`:'Spending by category';
+ const spendingBreakdown=<Donut groups={categorySelected?merchants:categories} dimension={categorySelected?'vendor':'category'} onSelect={categorySelected?diveMerchant:diveCategory}/>;
  const transTable=(list:Transaction[],limit?:number)=><Table rows={list} limit={limit} onMerchant={diveMerchant} onTag={diveTag} onCategory={diveCategory} onAccount={diveAccount} onEdit={editRow}/>;
  return <DrillNavigationContext.Provider value={showDrillNavigation?{back,consolidate}:null}><div className={`app-shell${showDrillNavigation?' has-drill-navigation':''}`}>
   {mobileMenuOpen&&<button type="button" className="navigation-backdrop" aria-label="Dismiss navigation menu" onClick={closeMenu}/>}
@@ -255,7 +261,7 @@ export default function App(){
       <div className="date-strip"><div className="date-tabs">{datePresets.map(p=><button key={p.label} className={view.filters.from===p.from&&view.filters.to===p.to?'active':''} onClick={()=>filterChange({from:p.from,to:p.to})}>{p.label}</button>)}</div><Button onClick={()=>setShowFilters(!showFilters)}>☷ {showFilters?'Hide filters':'All filters'}</Button></div>
       <div className="dashboard-hero"><Panel className="ring-panel"><div className="ring-title">Spending overview <span>↗</span></div><SpendingRing value={amounts.expenses} budget={65000000} onClick={()=>diveKind('expense')}/><div className="ring-stats"><div><span>Income</span><strong className="green-text">{money(amounts.income,true)}</strong></div><div><span>Card repayments</span><strong>{money(amounts.cardPayments,true)}</strong></div></div></Panel>
       <Panel className="trend-panel" title="Trends by month" right={<span className="muted text-small">May to Oct '26 · click a bar</span>}><Trend rows={filtered} onMonth={m=>diveMonth(m,'expense')} onIncome={m=>diveMonth(m,'income')}/></Panel>
-      <Panel className="category-panel" title="Spending by category" right={<button className="text-action" onClick={()=>goto('analytics')}>View all →</button>}><Donut groups={categories} onSelect={diveCategory}/></Panel></div>
+      <Panel className="category-panel" title={breakdownTitle} right={<button className="text-action" onClick={()=>goto('analytics')}>View all →</button>}>{spendingBreakdown}</Panel></div>
       <div className="metrics-row">{financeMetrics.map(m=><button key={m.label} data-testid={m.test} className={`metric-card tone-${m.color}`} onClick={()=>diveKind(m.kind)}><span className="metric-head"><span className="metric-icon">{m.icon}</span><span className="metric-arrow">↗</span></span><span className="metric-label">{m.label}</span><span className="metric-value">{money(m.value,true)}</span><span className="metric-detail">{m.desc}</span></button>)}</div>
       <Panel className="recent-panel" title="Recent transactions" right={<button className="text-action" onClick={()=>goto('transactions')}>View all →</button>}>{transTable(filtered,7)}</Panel>
      </>}
@@ -275,12 +281,12 @@ export default function App(){
      </div><div className="filter-panel-footer"><MiniLabel>Filters are combined using AND, and retained when navigating back.</MiniLabel><Button onClick={()=>navigate({...view,filters:{...EMPTY_FILTERS}},true)}>Reset filters</Button></div></Panel>}
     {view.page==='transactions'&&<>
       <div className="mini-metrics"><button className="submetric" onClick={()=>diveKind('expense')}><MiniLabel>Spending</MiniLabel><strong>{money(amounts.expenses,true)}</strong><span className="blue-text">↗ Show expenses</span></button><button className="submetric" onClick={()=>diveKind('income')}><MiniLabel>Income</MiniLabel><strong>{money(amounts.income,true)}</strong><span className="green-text">↗ Show income</span></button><button className="submetric" onClick={()=>diveKind('wealth')}><MiniLabel>Wealth allocations</MiniLabel><strong>{money(amounts.wealth,true)}</strong><span className="purple-text">↗ Show allocations</span></button><button className="submetric" onClick={()=>diveKind('card_payment')}><MiniLabel>Card payments (excluded)</MiniLabel><strong>{money(amounts.cardPayments,true)}</strong><span className="muted">↗ Inspect</span></button></div>
-      <div className="analytics-two"><Panel title="Spend by category" right={<span className="muted text-small">Click segments to filter</span>}><Donut groups={categories} onSelect={diveCategory}/></Panel><Panel title="Top merchants" right={<span className="muted text-small">By spending</span>}><div className="rank-list">{merchants.slice(0,6).map((m,i)=><button className="rank-row" key={m.key} onClick={()=>diveMerchant(m.key)}><span className="rank-num">{i+1}</span><strong>{m.key}</strong><span>{money(m.amountPaise,true)}</span><span className="rank-arrow">›</span></button>)}</div></Panel></div>
+      <div className="analytics-two"><Panel title={breakdownTitle} right={<span className="muted text-small">Click segments to filter</span>}>{spendingBreakdown}</Panel><Panel title="Top merchants" right={<span className="muted text-small">By spending</span>}><div className="rank-list">{merchants.slice(0,6).map((m,i)=><button className="rank-row" key={m.key} onClick={()=>diveMerchant(m.key)}><span className="rank-num">{i+1}</span><strong>{m.key}</strong><span>{money(m.amountPaise,true)}</span><span className="rank-arrow">›</span></button>)}</div></Panel></div>
       <Panel title={`${filtered.length} transactions` } right={<span className="muted text-small">{money(sumAmount(filtered),true)} total movement · gross, not net</span>}>{transTable(filtered)}</Panel>
      </>}
     {view.page==='analytics'&&<>
       <div className="metrics-row analytics-kpis">{financeMetrics.map(m=><button key={m.label} className={`metric-card tone-${m.color}`} onClick={()=>diveKind(m.kind)}><span className="metric-label">{m.label} ↗</span><strong className="metric-value">{money(m.value,true)}</strong><small>{m.desc}</small></button>)}</div>
-      <div className="analytics-two"><Panel title="Spending vs income · monthly" right={<span className="muted text-small">Select a month</span>}><Trend rows={filtered} onMonth={m=>diveMonth(m,'expense')} onIncome={m=>diveMonth(m,'income')}/></Panel><Panel title="Category breakdown" right={<span className="muted text-small">Select a category</span>}><Donut groups={categories} onSelect={diveCategory}/></Panel></div>
+      <div className="analytics-two"><Panel title="Spending vs income · monthly" right={<span className="muted text-small">Select a month</span>}><Trend rows={filtered} onMonth={m=>diveMonth(m,'expense')} onIncome={m=>diveMonth(m,'income')}/></Panel><Panel title={breakdownTitle} right={<span className="muted text-small">Select a {categorySelected?'vendor':'category'}</span>}>{spendingBreakdown}</Panel></div>
       <div className="analytics-two"><Panel title="Top spending categories"><div className="rank-list">{categories.slice(0,8).map((c,i)=><button key={c.key} className="rank-row" onClick={()=>diveCategory(c.key)}><span className="rank-num">{i+1}</span><span className="dot" style={{background:CATEGORY_COLORS[c.key]??fallbackColor}}/><strong>{c.key}</strong><span>{money(c.amountPaise,true)}</span><span className="rank-arrow">›</span></button>)}</div></Panel><Panel title="Top merchants"><div className="rank-list">{merchants.slice(0,8).map((c,i)=><button key={c.key} className="rank-row" onClick={()=>diveMerchant(c.key)}><span className="rank-num">{i+1}</span><strong>{c.key}</strong><span>{money(c.amountPaise,true)}</span><span className="rank-arrow">›</span></button>)}</div></Panel></div>
      </>}
     {view.page==='budgets'&&<><div className="info-line">Illustrative monthly limits multiplied by months in the selected period; not connected to a budget engine. Click a category to inspect its transactions.</div><div className="budget-grid">{Object.entries({ 'Food & Drinks':9000,'Groceries':10000,'Shopping':8000,'Bills & Utilities':6500,'Transport':5000,'Ordering In':9500,'Entertainment':5500,'Subscriptions':2200}).map(([category,budget])=>{const actual=categories.find(c=>c.key===category)?.amountPaise??0;const periodBudget=budget*periodMonths*100;const ratio=actual/periodBudget;return <button key={category} className="budget-card" onClick={()=>diveCategory(category)}><span>{category} <b>↗</b></span><strong>{money(actual,true)} <small>/ {money(periodBudget,true)} ({periodMonths} mo.)</small></strong><div className="progress-track"><div style={{width:`${Math.min(100,ratio*100)}%`,background:ratio>1?'#ff627a':'#22dca0'}}/></div><small>{Math.round(ratio*100)}% of illustrative target</small></button>})}</div></>}
