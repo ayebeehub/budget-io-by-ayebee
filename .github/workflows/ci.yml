@@ -1,0 +1,39 @@
+name: Phase 1 production verification
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-node@v6
+        with:
+          node-version: '24'
+          cache: npm
+      - name: Install locked dependencies
+        run: npm ci
+      - name: Domain, ingestion and navigation tests
+        run: npm run test:domain
+      - name: TypeScript and Vite production build
+        run: npm run build
+      - name: Install test browsers
+        run: npx playwright install --with-deps chromium firefox
+      - name: Test production build in real browsers
+        run: npm run test:ui
+      - uses: actions/upload-artifact@v4
+        if: ${{ !cancelled() }}
+        with:
+          name: phase1-browser-evidence
+          path: |
+            playwright-report/
+            test-results/
+          retention-days: 14
