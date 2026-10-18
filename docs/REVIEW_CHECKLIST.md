@@ -11,7 +11,7 @@
 - [ ] Navigate away or reload after preview: no imported candidate transaction was saved.
 - [ ] Verify original five acceptance tests still pass.
 - [x] Canonical React 19/Vite build, 15 domain tests and 16 production Chromium browser tests pass. See `BUILD_VERIFICATION.md`; owner checklist items above still require owner UAT.
-- [ ] Confirm Linux CI (including Firefox); local Windows Firefox cannot launch because its side-by-side runtime configuration is missing.
+- [x] Linux CI: all 32 Chromium/Firefox production-browser tests pass in run #3. Local Windows Firefox cannot launch because its side-by-side runtime configuration is missing; Firefox is verified in Linux CI.
 - [ ] Complete comprehensive accessibility/contrast review and owner approval. Real-data production remains gated by Phase 2A security; SMS bridge remains Phase 2B.
 
 **Do not provide genuine SMS or banking files to this Phase 1 prototype.**

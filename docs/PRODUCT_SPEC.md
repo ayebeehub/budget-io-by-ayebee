@@ -34,4 +34,4 @@
 
 ## Definition of done and unresolved decisions
 
-Canonical strict TS/Vite compilation, real Chromium/Playwright tests, native history/back/forward and reload persistence now pass; see `BUILD_VERIFICATION.md`. UI, tests and docs **do not themselves sign off Phase 1**: Firefox CI confirmation, comprehensive accessibility/contrast review and owner UX approval remain pending. Backend security design, full-history import commit, message capture reliability and regulated-distribution review remain separate gates.
+Canonical strict TS/Vite compilation, all 32 Chromium/Firefox production-browser cases, native history/back/forward and reload persistence now pass in GitHub Actions; see `BUILD_VERIFICATION.md`. UI, tests and docs **do not themselves sign off Phase 1**: comprehensive accessibility/contrast review and owner UX approval remain pending. Backend security design, full-history import commit, message capture reliability and regulated-distribution review remain separate gates.

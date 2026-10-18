@@ -7,7 +7,7 @@ The v0.2.0 archive was recovered and inspected in ChatGPT Work. Its SHA-256 is `
 | Check | Actual result |
 |---|---|
 | Dependency installation | Complete; npm lockfile generated. Node 24.18.0, npm 11.16.0. |
-| `npm run build` | PASS: strict TypeScript and Vite production compilation. 32 modules. JS 279.51 kB (86.56 kB gzip); CSS 19.06 kB (5.18 kB gzip). |
+| `npm run build` | PASS: strict TypeScript and Vite production compilation. 32 modules. Final JS 279.54 kB (86.58 kB gzip); CSS 19.32 kB (5.23 kB gzip). |
 | `npm run test:domain` | PASS: 15 tests, zero failures. |
 | `npm run test:ui -- --project=chromium` | PASS: 16 tests, zero failures or retries, 33.2 seconds. Actual production files served through Vite preview on port 4175. |
 | Firefox on this Windows host | Attempted, not passed: executable cannot start because its Windows side-by-side configuration is incorrect. No Firefox application assertions ran locally. Linux CI includes Firefox separately. |
@@ -32,6 +32,8 @@ Locked versions: React/ReactDOM 19.3.1, TypeScript 5.9.3, Vite 7.3.7, Playwright
 2. Amount input reformatted after each keystroke. It now preserves the editable string and validates/converts to integer paise on submission.
 3. Duplicate column names and invalid timestamp seconds are rejected rather than accepted silently.
 4. Replaced weak development-server tests, synthetic click dispatch and a broken `.last` assertion with production-server pointer/keyboard/file/history tests and row-level reconciliation.
+5. Initial Linux CI exposed a narrow-form overflow caused by native date/time widget widths. Narrow forms now use a single flexible column with bounded controls; the original overflow assertions remain in both browser projects.
+6. The comma-separated tag field also reformatted on every keystroke and lost trailing commas. It now retains the editable string until save; the browser test types multiple tags naturally and verifies persistence.
 
 ## Privacy and publication
 
@@ -39,6 +41,10 @@ The working checkout is separate from synced `sources/`. The real Axio CSV was n
 
 ## CI and remaining sign-off
 
-`.github/workflows/ci.yml` uses Node 24, `npm ci`, domain tests, strict production build, official Playwright browser installation, Chromium + Firefox tests, and private report artifacts retained for 14 days. Workflow existence is not proof of a passing remote run; record its actual outcome after publication.
+`.github/workflows/ci.yml` uses Node 24, `npm ci`, domain tests, strict production build, official Playwright browser installation, Chromium + Firefox tests, and private report artifacts retained for 14 days.
 
-Phase 1 automation is verified locally in Chromium. Owner UAT, comprehensive accessibility/contrast review and cross-browser CI confirmation remain separate pending checks. Phase 2A covers backend/auth/database/import commit/backup; the optional SMS bridge is Phase 2B. Real financial records remain prohibited in this unauthenticated, unencrypted browser-storage prototype.
+**Verified remote result:** [CI run #3](https://github.com/ayebeehub/budget-io-by-ayebee/actions/runs/39147388117) succeeded on code commit `95e3a545cb43956f9970ad3be39090b9854629dd`. Locked dependency installation, 15 domain tests, TypeScript/Vite production build and **32/32 browser cases (16 Chromium + 16 Firefox)** passed. Browser step: 1m 26s; complete job: 2m 24s. No test retries or skips. The initial CI run found two Linux mobile-form overflows; these were fixed and both subsequent cross-browser runs passed. A later documentation-only commit records this result without repeating unchanged application tests.
+
+The published tree contains 29 reviewed source/configuration/documentation files. Publication used the authenticated GitHub web UI because the connected GitHub app has no repository installation and Git has no usable noninteractive authentication. GitHub `main` is canonical. Local Git checkpoints preserve the working source separately; their commit history differs from the web-created remote history. Clone the canonical repository once Git authentication is configured before attempting direct Git pushes; do not force-push the independent local history.
+
+Phase 1 automation is verified in Chromium and Firefox on Linux, and Chromium on Windows. Owner UAT and comprehensive accessibility/contrast review remain pending. Branch protection has not been configured. Phase 2A covers backend/auth/database/import commit/backup; the optional SMS bridge is Phase 2B. Real financial records remain prohibited in this unauthenticated, unencrypted browser-storage prototype.

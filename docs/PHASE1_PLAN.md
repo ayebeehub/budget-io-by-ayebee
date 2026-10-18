@@ -2,7 +2,7 @@
 
 **Date: 2026-10-18 · Build: 0.2.0 · Synthetic data only · Phase 1 NOT formally signed off.**
 
-**Current canonical verification:** strict TypeScript/Vite production build PASS; 15/15 domain tests PASS; 16/16 Chromium tests against production preview PASS. Real browser history, reload persistence and actual file uploads are verified. Local Firefox cannot start because of a missing Windows side-by-side runtime configuration; Linux CI includes Firefox. See `BUILD_VERIFICATION.md` for current execution evidence and limitations.
+**Current canonical verification:** strict TypeScript/Vite production build PASS; 15/15 domain tests PASS; 32/32 Chromium + Firefox production-browser cases PASS in [CI run #3](https://github.com/ayebeehub/budget-io-by-ayebee/actions/runs/39147388117). Real browser history, reload persistence, natural amount/tag typing and actual file uploads are verified. Local Firefox still cannot launch on Windows, but all Firefox cases pass in Linux CI. See `BUILD_VERIFICATION.md` for execution evidence and limitations.
 
 ## Implementation
 
@@ -39,9 +39,11 @@
 - [x] Install dependencies, generate lockfile, and pass canonical React 19 TypeScript/Vite build and Chromium browser suite. CI configured to use `npm ci`.
 - [x] Test genuine browser Back/Forward, manual-entry reload persistence, and file-upload/validation with production React runtime.
 - [x] Desktop/narrow viewport and chart keyboard smoke verification.
-- [ ] Comprehensive accessibility/contrast review, owner UAT and Firefox/Linux CI confirmation.
+- [x] Firefox/Linux CI confirmation (16/16 Firefox cases, plus 16/16 Chromium cases).
+- [ ] Comprehensive accessibility/contrast review and owner UAT.
 - [x] Create the private GitHub repository; prepare production-build GitHub Actions workflow.
-- [ ] Verify the remote CI run after publication; assess branch-protection availability and owner policy without claiming it is enabled.
+- [x] Verify the remote CI run after publication: 32/32 browser cases and the locked production build pass.
+- [ ] Branch-protection policy/configuration remains a repository administration follow-up; it has not been enabled.
 
 ## Subsequent phases
 
