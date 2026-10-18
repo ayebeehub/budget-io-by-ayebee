@@ -6,3 +6,12 @@
 
 /* Phase 1 mandatory data entry controls */
 .import-actions{display:flex;gap:9px;align-items:center;flex-wrap:wrap}.import-file-label{background:#18375a;border:1px solid #39659a;padding:9px 14px;border-radius:7px;color:#d5eaff;font-size:12px;cursor:pointer;font-weight:700;display:inline-flex;align-items:center;gap:10px}.import-file-label input{width:190px;max-width:100%;font-size:10px}.import-file-label:hover{background:#245184}.import-table{margin-top:12px}.import-issues{display:block;color:#829bb7;max-width:250px;white-space:normal;margin-top:5px;line-height:1.5}.import-status{font-size:10px;font-weight:800;text-transform:uppercase;letter-spacing:.45px}.status-ready{color:#4df0a0}.status-review{color:#dcb2ff}.status-invalid{color:#ff7483}.import-disabled{margin-top:18px;display:flex;align-items:center;gap:14px;flex-wrap:wrap}.import-disabled button:disabled{opacity:.55;cursor:not-allowed}.import-actions .btn{white-space:nowrap}
+
+/* Native date/time widgets have different intrinsic widths across platforms. */
+.edit-grid label{min-width:0}
+.edit-grid input,.edit-grid select,.edit-grid textarea{width:100%;max-width:100%}
+@media(max-width:700px){
+ .edit-grid{grid-template-columns:minmax(0,1fr)}
+ .panel-head{flex-wrap:wrap}
+ .panel-head h3{min-width:0;overflow-wrap:anywhere}
+}
