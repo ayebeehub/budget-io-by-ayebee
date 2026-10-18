@@ -2,12 +2,14 @@
 
 **Status (18 October 2026):** Canonical TypeScript/Vite production build and **16/16 Chromium production-browser tests pass**, plus **15/15 domain/ingestion/navigation tests**. Manual creation, Axio CSV dry-run, charts, KPI drilldowns, native browser history, persistence and reconciliation are exercised with synthetic records. Firefox on this Windows host cannot launch because its side-by-side runtime configuration is missing; CI includes Firefox on Linux. Owner UAT and comprehensive accessibility review remain pending. No live SMS, account access, database or authentication is connected. See [build evidence](docs/BUILD_VERIFICATION.md).
 
+**GitHub Actions verified:** [run #3](https://github.com/ayebeehub/budget-io-by-ayebee/actions/runs/39147388117) passes locked dependency installation, 15 domain tests, strict production build and **32/32 Chromium + Firefox browser cases** on code commit `95e3a54`.
+
 ## What's new in v0.2.0
 
 - Transactions → **+ Add Transaction**: creates validated fabricated debit/credit transactions with independently chosen financial classification, optional time, account, category/subcategory, tags and comments. Synthetic demo rows persist locally in browser storage and reconcile into existing clickable charts.
 - Transactions → **Import CSV**: select a fabricated Axio/Budget IO CSV, preview parsing and validation, probable duplicates, ambiguous classifications and debit/credit/expense subtotals. Load/download a deliberately fabricated example. **Import commit is disabled until Phase 2.**
 - Two *mandatory* new Phase 1 exit criteria and tests (AT-06, AT-07), in addition to the existing five interaction/navigation cases.
-- Phase 2 conditional, opt-in MacroDroid SMS-capture bridge ADR; direct API preferred to ntfy for ingestion.
+- Phase 2B conditional, opt-in MacroDroid SMS-capture bridge ADR; direct API preferred to ntfy for ingestion, after Phase 2A backend/security prerequisites.
 
 ## Source and build
 
