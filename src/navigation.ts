@@ -33,3 +33,9 @@ export function parentView(current:View,index:number=current.trail.length-1):Vie
   if(!parent)return initialView;
   return {page:parent.page,filters:{...parent.filters},title:parent.label,transactionId:parent.transactionId,trail:current.trail.slice(0,index)};
 }
+
+/** Return to the full ledger in one step, retaining the period before drilling. */
+export function consolidatedView(current:View):View{
+  const period=current.trail[0]?.filters??current.filters;
+  return {page:'transactions',title:'All transactions',trail:[],filters:{...EMPTY_FILTERS,from:period.from,to:period.to}};
+}

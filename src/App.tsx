@@ -1,10 +1,10 @@
-import React, {useCallback, useEffect, useMemo, useState} from 'react';
+import React, {createContext, useCallback, useContext, useEffect, useMemo, useRef, useState} from 'react';
 import {
   ACCOUNTS,CATEGORY_COLORS,EMPTY_FILTERS,TAG_LIBRARY,chartReconciles,expenseCategories,expenseMerchants,
   filterTransactions,generateSyntheticLedger,lastSixMonths,money,monthlyTrend,sumAmount,totals,validAmountPaise
 } from './domain';
 import type {Filters,Kind,KindFilter,Transaction,Agg} from './domain';
-import {drill,goToPage,parentView,parseView,serializeView} from './navigation';
+import {consolidatedView,drill,goToPage,parentView,parseView,serializeView} from './navigation';
 import {parseRupee,previewCsv,validateManual,SYNTHETIC_IMPORT_SAMPLE} from './ingestion';
 import type {CsvPreview} from './ingestion';
 import type {Page,View} from './navigation';
@@ -39,8 +39,14 @@ function Button({children,onClick,kind='ghost',testid,type='button',disabled=fal
 function Pill({children,onClick,color}:{children:React.ReactNode;onClick?:()=>void;color?:string}){
  return <button type="button" className="tag" onClick={onClick} style={color?{'--tag-color':color} as React.CSSProperties:undefined}>{children}</button>;
 }
+const DrillNavigationContext=createContext<{back:()=>void;consolidate:()=>void}|null>(null);
+function DrillControls(){
+ const actions=useContext(DrillNavigationContext);
+ return actions?<div className="drill-controls"><button type="button" onClick={actions.back}>← Back</button><button type="button" onClick={actions.consolidate} title="Clear drilldown filters and keep the selected period">Consolidated view</button></div>:null;
+}
 function Panel({children,className='',title,right}:{children:React.ReactNode;className?:string;title?:string;right?:React.ReactNode}){
- return <section className={`panel ${className}`}>{title&&<div className="panel-head"><h3>{title}</h3>{right&&<div className="panel-actions">{right}</div>}</div>}{children}</section>;
+ const drillActions=useContext(DrillNavigationContext);
+ return <section className={`panel ${className}`}>{title&&<div className="panel-head"><h3>{title}</h3>{(right||drillActions)&&<div className="panel-actions">{right}<DrillControls/></div>}</div>}{children}</section>;
 }
 function MiniLabel({children}:{children:React.ReactNode}){return <span className="muted text-small">{children}</span>;}
 function Badge({children,color='green'}:{children:React.ReactNode;color?:'green'|'blue'|'purple'|'orange'}){return <span className={`badge ${color}`}>{children}</span>;}
@@ -167,7 +173,12 @@ export default function App(){
  const [rows,setRows]=useState<Transaction[]>(getStoredData);
  const [view,setView]=useState<View>(initialNavigation);
  const [showFilters,setShowFilters]=useState(false);
+ const [mobileMenuOpen,setMobileMenuOpen]=useState(false);
+ const menuToggle=useRef<HTMLButtonElement>(null);
+ const navigationPanel=useRef<HTMLElement>(null);
  const [toast,setToast]=useState('');
+ const hasDrillFilters=Boolean(view.filters.category||view.filters.merchant||view.filters.tag||view.filters.account||view.filters.institution||view.filters.search||view.filters.kind!=='all');
+ const showDrillNavigation=!['detail','new','import','settings'].includes(view.page)&&(view.trail.length>0||hasDrillFilters);
  const filtered=useMemo(()=>filterTransactions(rows,view.filters),[rows,view.filters]);
  const amounts=useMemo(()=>totals(filtered),[filtered]);
  const categories=useMemo(()=>expenseCategories(filtered),[filtered]);
@@ -183,11 +194,22 @@ export default function App(){
  // eslint-disable-next-line react-hooks/exhaustive-deps
  },[]);
  useEffect(()=>{try{localStorage.setItem(STORAGE_KEY,JSON.stringify(rows));}catch{/* e.g. browser storage blocked: edits remain in React memory */}},[rows]);
+ useEffect(()=>{
+  if(!mobileMenuOpen)return;
+  navigationPanel.current?.querySelector<HTMLButtonElement>('nav button')?.focus();
+  const previousOverflow=document.body.style.overflow;document.body.style.overflow='hidden';
+  const dismiss=(event:KeyboardEvent)=>{if(event.key==='Escape'){setMobileMenuOpen(false);menuToggle.current?.focus();}};
+  window.addEventListener('keydown',dismiss);
+  return ()=>{document.body.style.overflow=previousOverflow;window.removeEventListener('keydown',dismiss);};
+ },[mobileMenuOpen]);
+ useEffect(()=>{const desktop=window.matchMedia('(min-width: 901px)');const closeOnDesktop=()=>{if(desktop.matches)setMobileMenuOpen(false);};desktop.addEventListener('change',closeOnDesktop);return ()=>desktop.removeEventListener('change',closeOnDesktop);},[]);
  const navigate=useCallback((next:View,replace=false)=>{if(replace)history.replaceState({view:next},'',serializeView(next));else history.pushState({view:next},'',serializeView(next));setView(next);},[]);
  const filterChange=(patch:Partial<Filters>)=>navigate({...view,filters:{...view.filters,...patch}},true);
  const dive=(patch:Partial<Filters>,label:string,page:Page='transactions',transactionId?:string)=>navigate(drill(view,patch,label,page,transactionId));
- const goto=(page:Page)=>{setShowFilters(false);navigate(goToPage(view,page));};
- const back=()=>{if(view.trail.length){history.back();}else if(view.page!=='home'){goto('home');}else{navigate(goToPage(view,'home'));}};
+ const closeMenu=()=>{setMobileMenuOpen(false);menuToggle.current?.focus();};
+ const goto=(page:Page)=>{setShowFilters(false);if(mobileMenuOpen)closeMenu();navigate(goToPage(view,page));};
+ const consolidate=()=>navigate(consolidatedView(view));
+ const back=()=>{if(view.trail.length){history.back();}else if(hasDrillFilters){consolidate();}else if(view.page!=='home'){goto('home');}else{navigate(goToPage(view,'home'));}};
  const crumb=(index:number)=>navigate(parentView(view,index));
  const diveCategory=(c:string)=>dive({category:c,kind:'expense'},c);
  const diveMerchant=(m:string)=>dive({merchant:m},m);
@@ -216,15 +238,16 @@ export default function App(){
   {label:'Transfers',value:amounts.transfers,desc:'Internal movement only',color:'yellow',icon:'⇄',kind:'transfer' as KindFilter,test:'kpi-transfers'}
  ];
  const transTable=(list:Transaction[],limit?:number)=><Table rows={list} limit={limit} onMerchant={diveMerchant} onTag={diveTag} onCategory={diveCategory} onAccount={diveAccount} onEdit={editRow}/>;
- return <div className="app-shell">
-  <aside className="sidebar">
+ return <DrillNavigationContext.Provider value={showDrillNavigation?{back,consolidate}:null}><div className={`app-shell${showDrillNavigation?' has-drill-navigation':''}`}>
+  {mobileMenuOpen&&<button type="button" className="navigation-backdrop" aria-label="Dismiss navigation menu" onClick={closeMenu}/>}
+  <aside ref={navigationPanel} id="workspace-navigation" className={`sidebar${mobileMenuOpen?' is-open':''}`}>
    <button className="brand" onClick={()=>goto('home')}><span className="brand-mark">●</span><span><strong>Budget <em>IO</em></strong><small>BY AYEBEE · PERSONAL FINANCE</small></span></button>
    <div className="nav-caption">WORKSPACE</div>
    <nav aria-label="Main navigation">{(['home','transactions','analytics','budgets','accounts','reports','settings'] as const).map(p=><button key={p} className={`nav-link ${activePage===p?'selected':''}`} data-testid={`nav-${p}`} onClick={()=>goto(p)}><span className="nav-icon">{SIDE_ICONS[p]}</span>{PAGE_LABELS[p]}{p==='transactions'&&<span className="nav-arrow">›</span>}</button>)}</nav>
    <div className="sidebar-bottom"><span className="sync-indicator">●</span><div><strong>Local demo mode</strong><small>No bank or SMS connected</small></div></div>
   </aside>
   <main className="main-area">
-   <header className="topbar"><div className="mobile-brand"><span className="brand-mark">●</span> Budget IO <span className="mobile-brand-owner">by AyeBee</span></div><span className="topbar-path">BUDGET IO / {PAGE_LABELS[activePage].toUpperCase()}</span><div className="topbar-actions"><span className="demo-badge">SYNTHETIC DATA</span><div className="profile-avatar">BI</div></div></header>
+   <header className="topbar"><button ref={menuToggle} type="button" className="mobile-menu-toggle" aria-label={mobileMenuOpen?'Close navigation menu':'Open navigation menu'} aria-expanded={mobileMenuOpen} aria-controls="workspace-navigation" onClick={()=>mobileMenuOpen?closeMenu():setMobileMenuOpen(true)}><span aria-hidden="true">{mobileMenuOpen?'✕':'☰'}</span></button><div className="mobile-brand"><span className="brand-mark">●</span> Budget IO <span className="mobile-brand-owner">by AyeBee</span></div><span className="topbar-path">BUDGET IO / {PAGE_LABELS[activePage].toUpperCase()}</span><div className="topbar-actions"><span className="demo-badge">SYNTHETIC DATA</span><div className="profile-avatar">BI</div></div></header>
    <div className="content-area">
     {view.trail.length>0&&<div className="navigation-strip"><button data-testid="back-button" className="back-button" onClick={back}>← Back</button><div aria-label="Breadcrumb" className="breadcrumbs">{view.trail.map((c,i)=><React.Fragment key={i}><button onClick={()=>crumb(i)}>{c.label}</button><span> / </span></React.Fragment>)}<strong>{view.title}</strong></div></div>}
     {view.page==='home'&&<>
@@ -270,6 +293,7 @@ export default function App(){
     {view.page!=='settings'&&view.page!=='detail'&&view.page!=='new'&&view.page!=='import'&&<footer className="data-footer"><span className={filteredCorrect?'ok-dot':'bad-dot'}>●</span> Chart-to-ledger reconciliation: {filteredCorrect?'PASS':'FAIL'} · Data is synthetic · No live bank connection · {filtered.length} matching records</footer>}
    </div>
   </main>
+  {showDrillNavigation&&<nav className="drill-dock" aria-label="Drilldown navigation"><span className="drill-dock-label">{view.title}</span><DrillControls/></nav>}
   {toast&&<div className="toast" role="status">{toast}</div>}
- </div>;
+ </div></DrillNavigationContext.Provider>;
 }
