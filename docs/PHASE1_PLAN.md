@@ -2,7 +2,7 @@
 
 **Date: 2026-10-18 · Build: 0.2.0 · Synthetic data only · Phase 1 NOT formally signed off.**
 
-**Current canonical verification:** strict TypeScript/Vite production build PASS; 16/16 domain tests PASS; 44/44 Chromium + Firefox production-browser cases PASS in [CI run #4](https://github.com/ayebeehub/budget-io-by-ayebee/actions/runs/39149556470). Real browser history, reload persistence, natural amount/tag typing and actual file uploads are verified. Local Firefox still cannot launch on Windows, but all Firefox cases pass in Linux CI. See `BUILD_VERIFICATION.md` for execution evidence and limitations.
+**Current canonical verification:** strict TypeScript/Vite production build PASS; 16/16 domain tests PASS; 70/70 Chromium + Firefox production-browser cases PASS in [CI run #5](https://github.com/ayebeehub/budget-io-by-ayebee/actions/runs/39151001572). Real browser history, reload persistence, natural amount/tag typing and actual file uploads are verified. Local Firefox still cannot launch on Windows, but all Firefox cases pass in Linux CI. See `BUILD_VERIFICATION.md` for execution evidence and limitations.
 
 ## Implementation
 
@@ -39,10 +39,10 @@
 - [x] Install dependencies, generate lockfile, and pass canonical React 19 TypeScript/Vite build and Chromium browser suite. CI configured to use `npm ci`.
 - [x] Test genuine browser Back/Forward, manual-entry reload persistence, and file-upload/validation with production React runtime.
 - [x] Desktop/narrow viewport and chart keyboard smoke verification.
-- [x] Firefox/Linux CI confirmation (22/22 Firefox cases, plus 22/22 Chromium cases).
+- [x] Firefox/Linux CI confirmation (35/35 Firefox cases, plus 35/35 Chromium cases).
 - [ ] Comprehensive accessibility/contrast review and owner UAT.
 - [x] Create the private GitHub repository; prepare production-build GitHub Actions workflow.
-- [x] Verify the remote CI run after publication: 44/44 browser cases and the locked production build pass.
+- [x] Verify the remote CI run after publication: 70/70 browser cases and the locked production build pass.
 - [ ] Branch-protection policy/configuration remains a repository administration follow-up; it has not been enabled.
 
 ## Subsequent phases

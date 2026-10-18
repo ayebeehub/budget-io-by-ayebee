@@ -7,9 +7,9 @@ The v0.2.0 archive was recovered and inspected in ChatGPT Work. Its SHA-256 is `
 | Check | Actual result |
 |---|---|
 | Dependency installation | Complete; npm lockfile generated. Node 24.18.0, npm 11.16.0. |
-| `npm run build` | PASS: strict TypeScript and Vite production compilation. 32 modules. Final JS 281.67 kB (87.31 kB gzip); CSS 21.94 kB (5.80 kB gzip). |
+| `npm run build` | PASS: strict TypeScript and Vite production compilation. 32 modules. Final JS 282.05 kB (87.46 kB gzip); CSS 21.94 kB (5.80 kB gzip). |
 | `npm run test:domain` | PASS: 16 tests, zero failures. |
-| `npm run test:ui -- --project=chromium` | PASS: 22 tests, zero failures or retries, 26.3 seconds. Actual production files served through Vite preview on port 4175. |
+| `npm run test:ui -- --project=chromium` | PASS: 35 tests, zero failures or retries, 33.4 seconds. Actual production files served through Vite preview on port 4175. |
 | Firefox on this Windows host | Attempted, not passed: executable cannot start because its Windows side-by-side configuration is incorrect. No Firefox application assertions ran locally. Linux CI includes Firefox separately. |
 
 Locked versions: React/ReactDOM 19.3.1, TypeScript 5.9.3, Vite 7.3.7, Playwright 1.64.1. Chromium for Testing 156.0.8078.4. Versions satisfy the source archive's declared ranges. No legacy React 16 adapter was used for these results.
@@ -28,6 +28,8 @@ Locked versions: React/ReactDOM 19.3.1, TypeScript 5.9.3, Vite 7.3.7, Playwright
 
 - Owner navigation follow-up: Bills & Utilities → Jio, local panel Back, always-visible drilldown dock, one-click consolidated ledger with original dates, browser Back restoration, wealth/transfer merchant drilldowns, and directly opened filtered URLs.
 - Responsive menu: all seven pages at 390 px and 768 px, selection, Escape, backdrop dismissal, keyboard focus return, sticky toggle during scroll, desktop/mobile resize and no horizontal page overflow.
+
+- Vendor donut follow-up: independently summed vendor percentages and SVG arc proportions for all 11 expense categories; pointer vendor drilldown and Back; single-vendor categories; exclusion of refunds/non-expenses; date/account intersections on Home, Transactions and Analytics; keyboard slice activation; empty results; 10-vendor fabricated category on mobile with every legend entry visible in the page and no page overflow.
 
 ## Failures corrected
 
@@ -48,7 +50,7 @@ The working checkout is separate from synced `sources/`. The real Axio CSV was n
 
 `.github/workflows/ci.yml` uses Node 24, `npm ci`, domain tests, strict production build, official Playwright browser installation, Chromium + Firefox tests, and private report artifacts retained for 14 days.
 
-**Verified remote result:** [CI run #4](https://github.com/ayebeehub/budget-io-by-ayebee/actions/runs/39149556470) succeeded on code commit `ac4fbf83142179920e65dee1ad111f52c1af5c94`. Locked dependency installation, 16 domain tests, TypeScript/Vite production build and **44/44 browser cases (22 Chromium + 22 Firefox)** passed. Browser suite: 57.6s (59s CI step); complete job: 1m 45s. No test retries or skips. The initial CI run found two Linux mobile-form overflows; these were fixed and all three subsequent cross-browser runs passed. A later documentation-only commit records this result without repeating unchanged application tests.
+**Verified remote result:** [CI run #5](https://github.com/ayebeehub/budget-io-by-ayebee/actions/runs/39151001572) succeeded on code commit `3aa2f46ad243fdac7ef5fc1ee90a73844eb405fa`. Locked dependency installation, 16 domain tests, TypeScript/Vite production build and **70/70 browser cases (35 Chromium + 35 Firefox)** passed. Browser suite: 1.7m; complete job: 2m 29s. No test retries or skips. The initial CI run found two Linux mobile-form overflows; these were fixed and all four subsequent cross-browser runs passed. A later documentation-only commit records this result without repeating unchanged application tests.
 
 The published tree contains 29 reviewed source/configuration/documentation files. Publication used the authenticated GitHub web UI because the connected GitHub app has no repository installation and Git has no usable noninteractive authentication. GitHub `main` is canonical. Local Git checkpoints preserve the working source separately; their commit history differs from the web-created remote history. Clone the canonical repository once Git authentication is configured before attempting direct Git pushes; do not force-push the independent local history.
 
